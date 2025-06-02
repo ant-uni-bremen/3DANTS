@@ -10,3 +10,7 @@ Position and Mobility
 Communication Channel 
 Traffic 
 and the main engine which runs over the amount of simulation time. 
+The nneded libraries to be installed first are: 
+1- Skyfield at : https://rhodesmill.org/skyfield/
+2- sgp4.api at: https://pypi.org/project/sgp4/
+3- Pandas dataframe at: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
