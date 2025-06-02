@@ -137,9 +137,4 @@ if __name__ == '__main__':
              sat_position_df = pd.concat([sat_position_df, new_row_sat_position], ignore_index=True)
              print(i1)
          print(i)
-#%%
-DF2_csv_location = '/home/vakilifard/Documents/codes_result/saved_data_from_simulations/Walker_constellation_600km/DF2.csv'
-Satellite_df_position_csv_location = '/home/vakilifard/Documents/codes_result/saved_data_from_simulations/Walker_constellation_600km/satellite_position_df.csv'
-# Save the DataFrame to a CSV file
-DF2.to_csv(DF2_csv_location, index=True)
-sat_position_df.to_csv(Satellite_df_position_csv_location, index=True)
+
