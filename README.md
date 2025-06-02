@@ -14,3 +14,8 @@ The nneded libraries to be installed first are:
 1- Skyfield at : https://rhodesmill.org/skyfield/
 2- sgp4.api at: https://pypi.org/project/sgp4/
 3- Pandas dataframe at: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
+# Citation
+If you use the content of thios repository, we ask you kindly to either cite the repository by
+@misc{git_hublink_3DANTS,author = {MohammadAmin Vakilifard and Carsten Bockelmann},title = {{3DANTS}},howpublished = {Available at \url{https://github.com/ant-uni-bremen/3DANTS}}}
+or the paper uploaded in our website as:
+@inproceedings{Vakilifard2025,author    = {M. Vakilifard and C. Bockelmann and A. Dekorsy},title     = {3DANTS: An Open Source System Level Simulator for Unified 3D Networks}, howpublished = {Available at \url{https://www.ant.uni-bremen.de/sixcms/media.php/102/15135/3DANTS_WSA_2025.pdf}}}
