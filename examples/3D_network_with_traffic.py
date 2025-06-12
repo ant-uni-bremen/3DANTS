@@ -712,7 +712,7 @@ NOISE_FLOOR = -122.086  # dB
 # Create a copy of the interference dataframe
 df = Interference_on_User_satellite.copy()
 df = df.iloc[:-1]
-file_path_to_save = '/home/vakilifard/Documents/codes_result/saved_data_from_simulations/3D-networks-with-Traffic/LEO_walker_const-HAPS-3BSs-Poisson_traffic/Interference_on_User_Satellite.parquet'
+
 # Save the DataFrame as a Parquet file
 for col in df.columns:
     if df[col].apply(lambda x: isinstance(x, np.ndarray)).any():
