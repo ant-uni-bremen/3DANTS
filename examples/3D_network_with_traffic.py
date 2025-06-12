@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Thu Jun 12 17:14:28 2025
+
+@author: vakilifard
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Mon Apr 28 18:42:51 2025
 
 @author: vakilifard
@@ -176,6 +184,155 @@ if __name__ == '__main__':
     plt.show()
     
     
+    
+    
+    
+    
+
+    # Example data (replace with your own)
+    group_labels = ["SatA, SatB", "SatC, SatD", "SatE, SatF"]  # Your satellite groups
+    durations = [120, 150, 90]  # Your visibility durations
+    
+    # Create the bar plot
+    plt.figure(figsize=(12, 6))  # Set figure size
+    plt.bar(group_labels, durations, color='skyblue')
+    plt.xlabel('Satellite Groups')
+    plt.ylabel('Total Visibility Duration (minutes)')
+    plt.title('Visibility Durations of Satellite Groups')
+    plt.xticks(rotation=45, ha='right')  # Rotate labels 45 degrees
+    plt.tight_layout()  # Adjust layout to prevent clipping
+    plt.show()
+    
+
+    # Example data
+    group_labels = ["SatA, SatB", "SatC, SatD", "SatE, SatF"]
+    durations = [120, 150, 90]
+    
+    # Create a horizontal bar plot
+    plt.figure(figsize=(10, 8))  # Adjust height for more groups
+    plt.barh(group_labels, durations, color='skyblue')
+    plt.ylabel('Satellite Groups')
+    plt.xlabel('Total Visibility Duration (minutes)')
+    plt.title('Visibility Durations of Satellite Groups')
+    plt.tight_layout()
+    plt.show()
+    
+    ### Overlapping satellite 
+    # After the plotting section (plt.show()), add the following:
+
+    from collections import defaultdict
+    
+    # Convert Skyfield Time objects to datetime for easier manipulation
+    if hasattr(DF2['Rise'].iloc[0], 'utc_datetime'):
+        DF2['Rise'] = DF2['Rise'].apply(lambda t: t.utc_datetime())
+        DF2['Set'] = DF2['Set'].apply(lambda t: t.utc_datetime())
+    time1_dt = time1.utc_datetime()
+    time2_dt = time2.utc_datetime()
+    
+    # Collect all rise and set events
+    events = []
+    for index, row in DF2.iterrows():
+        satellite = row['Satellite']
+        rise_time = row['Rise']
+        set_time = row['Set']
+        events.append((rise_time, satellite, 'rise'))
+        events.append((set_time, satellite, 'set'))
+    
+    # Sort events by time, with rise events before set events if times are equal
+    sorted_events = sorted(events, key=lambda x: (x[0], x[2]))
+    
+    # Initialize variables to track visible satellites and group durations
+    current_visible = set()
+    group_durations = defaultdict(float)
+    previous_time = time1_dt
+    
+    # Process each event to determine simultaneous visibility
+    for event in sorted_events:
+        time, satellite, event_type = event
+        if time > previous_time:
+            duration = (time - previous_time).total_seconds() / 60  # Convert to minutes
+            group = frozenset(current_visible)
+            group_durations[group] += duration
+        if event_type == 'rise':
+            current_visible.add(satellite)
+        elif event_type == 'set':
+            current_visible.remove(satellite)
+        previous_time = time
+    
+    # Account for any remaining time until the simulation end
+    if time2_dt > previous_time:
+        duration = (time2_dt - previous_time).total_seconds() / 60
+        group = frozenset(current_visible)
+        group_durations[group] += duration
+    
+    # Display the results
+    print("\nSatellite groups visible together:")
+    for group in sorted(group_durations, key=lambda x: sorted(x)):
+        if group:
+            satellites = ', '.join(sorted(group))
+            print(f"Satellites {satellites} are visible together for {group_durations[group]:.2f} minutes")
+        else:
+            print(f"No satellites are visible for {group_durations[group]:.2f} minutes")
+    import matplotlib.pyplot as plt
+
+    # Prepare data for plotting
+    group_labels = []
+    durations = []
+    
+    for group in sorted(group_durations.keys(), key=lambda x: sorted(x)):
+        if group:
+            label = ', '.join(sorted(group))
+        else:
+            label = 'No satellites'
+        group_labels.append(label)
+        durations.append(group_durations[group])
+    
+    # Create bar plot
+    plt.figure(figsize=(12, 6))
+    plt.bar(group_labels, durations, color='skyblue')
+    plt.xlabel('Satellite Groups')
+    plt.ylabel('Total Visibility Duration (minutes)')
+    plt.title('Visibility Durations of Satellite Groups')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    
+    # Display the plot
+    plt.show()
+    
+    # Parameters to limit the plot
+    MIN_DURATION = 1.0  # Only show groups visible for at least 5 minutes
+    TOP_N = 30  # Show only the top 20 groups by duration
+    
+    # Prepare data for plotting
+    group_data = []
+    for group in sorted(group_durations.keys(), key=lambda x: sorted(x)):
+        duration = group_durations[group]
+        if duration >= MIN_DURATION:  # Apply duration threshold
+            if group:
+                label = ', '.join(sorted(group))
+            else:
+                label = 'No satellites'
+            group_data.append((label, duration))
+    
+    # Sort by duration (descending) and limit to top N
+    group_data = sorted(group_data, key=lambda x: x[1], reverse=True)[:TOP_N]
+    group_labels, durations = zip(*group_data) if group_data else ([], [])
+    
+    # Create horizontal bar plot
+    plt.figure(figsize=(10, max(6, len(group_labels) * 0.4)))  # Adjust height dynamically
+    plt.barh(group_labels, durations, color='skyblue')
+    plt.ylabel('Satellite Groups')
+    plt.xlabel('Total Visibility Duration (minutes)')
+    plt.title(f'Visibility Durations of Top {TOP_N} Satellite Groups (≥ {MIN_DURATION} min)')
+    plt.tight_layout()
+    
+    # Display the plot
+    plt.show()
+    
+    # Optional: Print the number of groups filtered
+    print(f"Total groups: {len(group_durations)}")
+    print(f"Groups shown: {len(group_labels)} (after filtering for ≥ {MIN_DURATION} min and top {TOP_N})")
+    
     #%% All Data Frames initializations except satellite positions:
     sat_position_df = pd.DataFrame(columns=['Satellite ID', 'Time', 'Sat Position (km)', 'GS Position (km)', 'Distance from Earth Surface (km)', 'distance to GS (km)', 'Elevation Angle (degree)', 'satellite velocity (km)', 'v_LOS (kmps)'])
     sat_orbital_parameters_df = pd.DataFrame(columns=['Satellite ID', 'Time', 'Theta_el_sat_see_vsat', 'Theta_az_sat_see_vsat', 'theta_el_vsat_see_sat', 'theta_az_vsat_see_sat'])
@@ -186,14 +343,13 @@ if __name__ == '__main__':
     # satellite user generation
     User_sat_initial_location = hex_grid.Point_initial_location_generation(base_lat, base_lon, 5)
     generation_intervals = 1 # seconds. 
-    number_samples_nakagami = generation_intervals * 1000 #miliseconds; for microseconds multiply by 10e6
-    num_samples_rician = 100 # in miliseconds
-    fs_initial = 10000
+    # Small-scale fading parameters
+    batch_size = 10000  # Fixed batch size (e.g., 10000 samples = 1 second at 1 ms/sample)
+    number_samples_nakagami = batch_size
+    num_samples_rician = batch_size // 10  # 1/10th of number_samples_nakagami. Adjustable
+    fs_initial = 10000  # Sampling frequency in Hz
     N = 256
     satellite_fading_channel = Satellite_Fading_channel(number_samples_nakagami, num_samples_rician, fs_initial, N)
-    large_scale_shadowing_inetrval = 10 # in seconds. based on how many seconds to chnage 5 degree of elevation angle 
-    large_scale_shadowing_num_samples = large_scale_shadowing_inetrval * 1000
-    Shadowing = ShadowingFading(tau = 10, N = large_scale_shadowing_num_samples)
 
     #%%
     """ ################################################# Parameters intialization for UAV, drones and HAPs ################################################################ """
@@ -312,6 +468,40 @@ if __name__ == '__main__':
         t_set = DF2.iloc[i,2]
         t_rise_now = ts.utc(t_rise.year, t_rise.month, t_rise.day, t_rise.hour, t_rise.minute, t_rise.second)
         t_set_now = ts.utc(t_set.year, t_set.month, t_set.day, t_set.hour, t_set.minute, t_set.second)
+        
+        # Initial setup for calculating shadow fading and small scale fading based on trajectory of LEO satellites
+        time_now = t_rise_now
+        position_LEO = LEOs[Sat_ID_int-1].at(time_now)
+        elev0 = LG.elevation_angel_calculator(position_LEO.xyz.km, groundstation.at(time_now).position.km)
+        
+        # Calculate initial rate of change after 1 second
+        time_later = t_rise_now + datetime.timedelta(seconds=1)
+        position_later = LEOs[Sat_ID_int-1].at(time_later)
+        elev1 = LG.elevation_angel_calculator(position_later.xyz.km, groundstation.at(time_later).position.km)
+        rate = (elev1 - elev0) / 1  # degrees per second
+        initial_tau = 10  # Default as per current setting
+        if abs(rate) > 0.001:  # Avoid division by very small rates
+            initial_tau = 1 / abs(rate)
+        
+        # Initialize tracking variables
+        last_regen_elevation = elev0
+        last_regen_time = t_rise_now
+        shadowing_sample_index = 0
+        large_scale_shadowing_num_samples = 10000  # Fixed large number, e.g., 10 seconds at 1000 Hz
+        Shadowing = ShadowingFading(tau=initial_tau, N=large_scale_shadowing_num_samples)
+        shadowing_samples_interval = Shadowing.SF_LOS_calc(elev0, 'LOS', 'SBand')
+        
+        # per each satellite update
+        last_regen_elevation_small = elev0  # Track last regeneration elevation
+        LEO_velocity = LEOs[Sat_ID_int-1].at(time_now).velocity
+        LEO_velocity_km_per_sec = LEO_velocity.km_per_s
+        line_of_sight_vector_from_GS_to_satellite = groundstation.at(time_now).position.km - position_LEO.xyz.km
+        r_hat = line_of_sight_vector_from_GS_to_satellite / np.linalg.norm(line_of_sight_vector_from_GS_to_satellite)
+        v_LOS = np.dot(LEO_velocity_km_per_sec, r_hat)
+        distance_GS_sat = LG.distance(groundstation.at(time_now).position.km, position_LEO.xyz.km)
+        shadowed_rician_channel_samples_interval = satellite_fading_channel.run_simulation(elev0, v_LOS, f, distance_GS_sat)
+        small_scale_sample_index = 0  # Index to track current sample
+
         visibility_sec = LG.difference_time_in_seconds(t_rise_now, t_set_now)
         visibility_millisec = visibility_sec * 1000
         # Find all visible satellites at t_rise_now
@@ -486,7 +676,6 @@ if __name__ == '__main__':
             
             position_GS = groundstation.at(time_now).position.km
             
-            #distance_GS_sat = LA.norm(groundstation.at(time_now).position.km, position_LEO.xyz.km)
             distance_GS_sat = LG.distance(groundstation.at(time_now).position.km, position_LEO.xyz.km)
             
             elevation_angle = LG.elevation_angel_calculator(position_LEO.xyz.km, groundstation.at(time_now).position.km)
@@ -520,33 +709,47 @@ if __name__ == '__main__':
             # Assign the propagation environemnt for line of sight probability claculating 
             lOS_prob = Rx_power().LOS_prob_calc(elevation_angle, 'Sub_Urban')
             
-            # calculate the Shadowed-Rician fading channel temporally correlated as:
-                # we generate the channel for each generation_intervals seconds since the change of elevation angle each generation_intervals seconds is significant
-                # we generate per each second 1000 samples means TTI is 1 ms (10e6 samples if TTI is in microseconds)
-                # Here since TTI is 1 ms, we feed at each i2 one sample out of generated channels 
-            if i1 % generation_intervals*1000 == 0:
-                print(f"Generating samples at i={i}, i1={i1}")
+            if abs(elevation_angle - last_regen_elevation_small) >= 1:
+                last_regen_elevation_small = elevation_angle
+                # Update parameters (e.g., v_LOS, distance_GS_sat) - assume these are calculated elsewhere if needed
+                distance_GS_sat = LG.distance(groundstation.at(time_now).position.km, position_LEO.xyz.km)
+                line_of_sight_vector = position_LEO.xyz.km - groundstation.at(time_now).position.km
+                r_hat = line_of_sight_vector / np.linalg.norm(line_of_sight_vector)
+                v_LOS = np.dot(LEO_velocity_km_per_sec, r_hat)  # Assume LEO_velocity_km_per_sec is defined
+                # Generate new batch
                 shadowed_rician_channel_samples_interval = satellite_fading_channel.run_simulation(elevation_angle, v_LOS, f, distance_GS_sat)
-            if i1 % large_scale_shadowing_inetrval*1000 == 0:
-                shadowing_samples_interval = Shadowing.SF_LOS_calc(elevation_angle, 'LOS', 'SBand')
-                print(f"Generating LS sahdowing samples at i={i}, i1={i1}")
-
-            start_idx_small_scale_fading = i1 % generation_intervals*1000
-            end_idx_small_scale_fading = start_idx_small_scale_fading + 1
-            
-            start_idx_large_scale_fading = i1 % large_scale_shadowing_inetrval*1000
-            end_idx_large_scale_fading = start_idx_large_scale_fading + 1
-       
-            if end_idx_small_scale_fading <= len(shadowed_rician_channel_samples_interval):
-               Satellite_Channel_fading_samples = shadowed_rician_channel_samples_interval[start_idx_small_scale_fading:end_idx_small_scale_fading]
-            else:
-               print(f"Index out of range at i={i}, i1={i1}")
+                small_scale_sample_index = 0
+                
+            # Check if current batch is exhausted
+            if small_scale_sample_index >= len(shadowed_rician_channel_samples_interval):
+                # Generate new batch with current parameters
+                shadowed_rician_channel_samples_interval = satellite_fading_channel.run_simulation(elevation_angle, v_LOS, f, distance_GS_sat)
+                small_scale_sample_index = 0
+                
+            # Use current sample
+            Satellite_Channel_fading_samples = shadowed_rician_channel_samples_interval[small_scale_sample_index]
+            small_scale_sample_index += 1
                
-            if end_idx_large_scale_fading <= len(shadowing_samples_interval):
-               Satellite_Shadowing_samples = shadowing_samples_interval[start_idx_large_scale_fading:end_idx_large_scale_fading]
-            else:
-               print(f"Index out of range at i={i}, i1={i1}")
 
+            # Check if elevation angle has changed by 5 degrees
+            if abs(elevation_angle - last_regen_elevation) >= 5:
+                delta_time = (time_now - last_regen_time).total_seconds()
+                tau = initial_tau  # Fallback
+                if delta_time > 0:  # Ensure non-zero time difference
+                    tau = delta_time / 5  # Time for 1-degree change
+                last_regen_time = time_now
+                last_regen_elevation = elevation_angle
+                Shadowing = ShadowingFading(tau=tau, N=large_scale_shadowing_num_samples)
+                shadowing_samples_interval = Shadowing.SF_LOS_calc(elevation_angle, 'LOS', 'SBand')
+                shadowing_sample_index = 0
+            
+            # Handle case where we run out of samples (unlikely but safe)
+            if shadowing_sample_index >= len(shadowing_samples_interval):
+                shadowing_samples_interval = Shadowing.SF_LOS_calc(elevation_angle, 'LOS', 'SBand')
+                shadowing_sample_index = 0
+            
+            Satellite_Shadowing_samples = shadowing_samples_interval[shadowing_sample_index]
+            shadowing_sample_index += 1
             
             # calculate only the fspl as function of distance and frequecny
             fspl_solo = Rx_power().FSPl_only(f, distance_GS_sat)
@@ -712,7 +915,7 @@ NOISE_FLOOR = -122.086  # dB
 # Create a copy of the interference dataframe
 df = Interference_on_User_satellite.copy()
 df = df.iloc[:-1]
-
+#file_path_to_save = '/home/vakilifard/Documents/codes_result/saved_data_from_simulations/3D-networks-with-Traffic/LEO_walker_const-HAPS-3BSs-Poisson_traffic/Interference_on_User_Satellite.parquet'
 # Save the DataFrame as a Parquet file
 for col in df.columns:
     if df[col].apply(lambda x: isinstance(x, np.ndarray)).any():
@@ -720,8 +923,6 @@ for col in df.columns:
             lambda x: x.item() if isinstance(x, np.ndarray) and x.size == 1 else x
         )
 
-df.to_parquet(file_path_to_save, index=False)
-print(f"DataFrame saved to {file_path_to_save}")
 
 # Function to detect interference presence
 def detect_interference(row, source):
@@ -874,6 +1075,7 @@ print(f"BS1 only: {len(bs1_only)} samples ({len(bs1_only)/len(df)*100:.1f}%)")
 print(f"BS2 only: {len(bs2_only)} samples ({len(bs2_only)/len(df)*100:.1f}%)")
 print(f"BS3 only: {len(bs3_only)} samples ({len(bs3_only)/len(df)*100:.1f}%)")
 print(f"Multiple interferers: {len(multiple_interferers)} samples ({len(multiple_interferers)/len(df)*100:.1f}%)")
+
 
 
 
