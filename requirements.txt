@@ -1,0 +1,36 @@
+# 3DANTS — Python dependency list
+# Install with:  pip install -r requirements.txt
+#
+# Minimum versions reflect the API surface used by the simulator.
+# Exact versions used during development are shown in comments.
+
+# ── Orbital mechanics & satellite propagation ─────────────────────────────
+skyfield>=1.46          # Satellite position, rise/set events, ITRS/GCRS frames
+sgp4>=2.22              # SGP4 propagator (used directly via sgp4.api.Satrec)
+
+# ── Scientific computing ──────────────────────────────────────────────────
+numpy>=1.24             # Array operations, linear algebra throughout
+scipy>=1.10             # Special functions (Bessel, Rician, Nakagami), stats
+sympy>=1.12             # Symbolic algebra (orbital parameter derivation)
+
+# ── Data handling ─────────────────────────────────────────────────────────
+pandas>=2.0             # DataFrames for simulation time-series output
+
+# ── Geospatial ────────────────────────────────────────────────────────────
+pyproj>=3.5             # WGS-84 geodetic calculations, great-circle distances
+shapely>=2.0            # Geometric operations for satellite cell footprints
+
+# ── Machine learning (channel modelling utilities) ────────────────────────
+scikit-learn>=1.2       # Polynomial regression for LoS probability curves
+
+# ── Random field generation ───────────────────────────────────────────────
+gstools>=1.4            # Gaussian random field generation (shadowing maps)
+
+# ── Visualisation ────────────────────────────────────────────────────────
+matplotlib>=3.7         # All 2-D and 3-D plots
+
+# ── CLI progress display ─────────────────────────────────────────────────
+progress>=1.6           # Progress bar in constellation simulation loop
+
+# ── Testing (not required at runtime) ────────────────────────────────────
+pytest>=7.0             # Test runner for tests/
