@@ -33,7 +33,15 @@ class Air_Fading_channel:
             phi_n = 2 * np.pi * np.random.rand() - np.pi    # phi_{n, k}
             Z += np.exp(1j * omega_m * t * np.cos((2 * np.pi * n + theta_n) / self.N)) * np.exp(1j * phi_n)
         
-        Z *= np.sqrt(1 / ((self.N+1) * (1 + K)))
+        # Normalise by N (number of NLOS sinusoids), not N+1.
+        # The LOS term is handled separately below; including it in
+        # the denominator would bias the effective K-factor downward.
+        # Ref: Pätzold, "Mobile Radio Channels" 2nd ed., eq. 5.3.15.
+        # First normalise NLOS part to unit power
+        Z /= np.sqrt(np.mean(np.abs(Z)**2))
+        # Apply Rician scaling
+        Z *= np.sqrt(1 / (1 + K))
+	
         # LOS component
         theta_0 = theta_rad
         phi_0 = 2 * np.pi * np.random.rand() - np.pi       # phi_{0, k}
@@ -43,12 +51,18 @@ class Air_Fading_channel:
         return fading_process
 
     def b_0_calc(self, theta):
+        theta = max(theta, 20)
+
         return -4.7943e-8 * theta**3 + 5.5784e-6 * theta**2 - 2.1344e-4 * theta + 3.2710e-2
 
     def m_theta(self, theta):
+        theta = max(theta, 20)
+
         return 6.3739e-5 * theta**3 + 5.8533e-4 * theta**2 - 1.5973e-1 * theta + 3.5156
 
     def Omega_theta(self, theta):
+        theta = max(theta, 20)
+
         return 1.4428e-5 * theta**3 - 2.3798e-3 * theta**2 + 0.12702 * theta - 1.4864
 
 
@@ -79,6 +93,11 @@ class Air_Fading_channel:
         distance_satellite = distance_satellite * 1000
         for fc in fc_array:
             for theta_deg, theta_rad in zip(theta_degrees, theta_radians):
+                # 3GPP TR 38.811 polynomial fits valid for theta ≥ 20°
+                if theta_deg < 20:
+                    theta_deg = 20
+                    theta_rad = np.deg2rad(theta_deg)
+                    
                 fd = ((np.abs(velocity) * 1000)/(3.0e8)) * fc
                 
                 # Update fs if necessary
@@ -106,6 +125,7 @@ class Air_Fading_channel:
                 nakagami_correlated_ranked_matched = self.Rank_matching(lower_doppler_rayleigh_fading, nakagami_sequence)
                 
                 # Combine to form the shadowed Rician channel
-                Shadowed_rician_channel = rician_fading_samples + nakagami_correlated_ranked_matched * np.exp(-1j * 2 * np.pi * (distance_satellite * 1000 * fc) /3e8)
+                # distance_satellite was already converted to metres above (×1000).
+                # Do NOT multiply by 1000 again — that would be a 10^6 error in phase.
+                Shadowed_rician_channel = rician_fading_samples + nakagami_correlated_ranked_matched * np.exp(-1j * 2 * np.pi * (distance_satellite * fc) / 3e8)
         return Shadowed_rician_channel
-                
