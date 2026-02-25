@@ -62,11 +62,14 @@ class LEO_GEO():
         return GEO_sat
 
     def Epoch_time(self):
-        epoch = datetime.datetime.fromisoformat("1949-12-31 00:00")
-        #diff = datetime.datetime.now() - epoch
-        time_end_epoch = datetime.datetime.fromisoformat("2021-10-24 14:58:51")
-        diff = time_end_epoch - epoch
-        days = diff.days + (diff.seconds/(24*3600))
+        # SGP4 epoch is days since 1949-12-31 00:00 UTC.
+        # Use current UTC time so freshly-created satellites have a valid,
+        # up-to-date epoch and do not accumulate propagation error from
+        # a stale hard-coded date.
+        epoch = datetime.datetime(1949, 12, 31, 0, 0, 0)
+        now   = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        diff  = now - epoch
+        days  = diff.days + (diff.seconds / (24 * 3600))
         return days
     #UTC — Coordinated Universal Time (“Greenwich Time”)
     #UT1 — Universal Time
@@ -323,7 +326,9 @@ class LEO_GEO():
         N = a / math.sqrt(1 - e_sq * math.sin(obs_lat)**2)
         alt = r - N
         # Convert latitude and longitude to degrees
-        obs_lat = math.radians(math.degrees(obs_lat)+0.18)
+        # No manual correction: geodetic latitude is already correctly derived
+        # from the ECEF position vector above.
+        obs_lat = math.radians(math.degrees(obs_lat))
         obs_lon = math.radians(math.degrees(obs_lon))
         #obs_lat = math.radians(53.105750)  # observer's latitude in radians
         #obs_lon = math.radians(8.859860)  # observer's longitude in radians
@@ -332,8 +337,9 @@ class LEO_GEO():
         obs_u = np.cos(obs_lat) * np.cos(obs_lon) * r_obs_sat[0] + np.cos(obs_lat) * np.sin(obs_lon) * r_obs_sat[1] + np.sin(obs_lat) * r_obs_sat[2]
         # Calculate elevation angle in degrees
         elevation_angle = math.degrees(math.atan2(obs_u, math.sqrt(obs_e**2 + obs_n**2)))
-        if elevation_angle < 10:
-            elevation_angle = 10
+        # Return the true computed elevation angle.
+        # Callers should apply their own minimum-elevation mask if needed
+        # (e.g. simulateConstellation already filters by minimumElevation).
         return elevation_angle
 
 '''
