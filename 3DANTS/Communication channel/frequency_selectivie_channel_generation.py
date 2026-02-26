@@ -11,8 +11,15 @@ import numpy as np
 from ntn_fading_channel_sim import FadingSimulation_Non_terrestrial
 
 class FrequencySelectiveFadingSimulation(FadingSimulation_Non_terrestrial):
-    def __init__(self, num_samples, fs, N, h, num_subcarriers, delay_spread, num_taps, Doppler_compensate):
-        super().__init__(num_samples, fs, N, h, Doppler_compensate)
+    def __init__(self, num_samples, fs, N, h, num_subcarriers, delay_spread, num_taps,
+                 doppler_mode='full', v_residual_mps=1.5, Tc_target_s=0.034,
+                 fc_ref=2.5e9, Doppler_compensate=None):
+        super().__init__(num_samples, fs, N, h,
+                         doppler_mode=doppler_mode,
+                         v_residual_mps=v_residual_mps,
+                         Tc_target_s=Tc_target_s,
+                         fc_ref=fc_ref,
+                         Doppler_compensate=Doppler_compensate)
         
         self.num_subcarriers = num_subcarriers
         self.delay_spread = delay_spread
