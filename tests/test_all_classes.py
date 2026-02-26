@@ -428,45 +428,92 @@ class TestFadingSimulation(unittest.TestCase):
 
     def setUp(self):
         np.random.seed(0)
-        # h=600 km, Doppler_compensate='No' → uses vis-viva velocity formula
+        # Default: full mode (Option C) — true orbital velocity
         self.sim = FadingSimulation(
             num_samples=1000, fs=10_000, K=5.0,
-            N=16, h=600_000.0, Doppler_compensate='No'
+            N=16, h=600_000.0, doppler_mode='full'
         )
 
-    # -- satellite velocity --------------------------------------------------
+    # -- satellite velocity and Doppler modes --------------------------------
+    def test_full_mode_uses_orbital_velocity(self):
+        """Option C (full): v_sat must equal vis-viva sqrt(GM/r)."""
+        G = 6.6743e-11; M = 5.9722e24; R = 6371e3; h = 600_000.0
+        expected = math.sqrt(G * M / (R + h))
+        sim = FadingSimulation(100, 1000, 5.0, 16, h, doppler_mode='full')
+        self.assertAlmostEqual(sim.v_sat, expected, delta=1.0)
+
+    def test_compensated_mode_uses_ue_speed(self):
+        """Option A (compensated): v_sat must equal the supplied UE speed."""
+        v_ue = 3.5  # m/s
+        sim  = FadingSimulation(100, 1000, 5.0, 16, 600_000.0,
+                                doppler_mode='compensated', v_residual_mps=v_ue)
+        self.assertAlmostEqual(sim.v_sat, v_ue, places=9)
+
+    def test_scaled_mode_hits_target_coherence_time(self):
+        """Option B (scaled): Tc_effective must equal the requested Tc_target_s."""
+        Tc_target = 0.05   # 50 ms
+        sim = FadingSimulation(100, 1000, 5.0, 16, 600_000.0,
+                               doppler_mode='scaled', Tc_target_s=Tc_target, fc_ref=2.5e9)
+        self.assertAlmostEqual(sim.Tc_effective, Tc_target, delta=1e-9)
+
+    def test_legacy_no_maps_to_full_mode(self):
+        """Backward-compat: Doppler_compensate='No' → full mode, orbital velocity."""
+        G = 6.6743e-11; M = 5.9722e24; R = 6371e3; h = 600_000.0
+        expected = math.sqrt(G * M / (R + h))
+        sim = FadingSimulation(100, 1000, 5.0, 16, h, Doppler_compensate='No')
+        self.assertAlmostEqual(sim.v_sat, expected, delta=1.0)
+
+    def test_legacy_yes_maps_to_compensated_mode(self):
+        """Backward-compat: Doppler_compensate='Yes' → compensated mode,
+        v_sat = 1.5 m/s (pedestrian default), NOT the old sqrt(GM/r^2) error."""
+        sim = FadingSimulation(100, 1000, 5.0, 16, 600_000.0, Doppler_compensate='Yes')
+        self.assertEqual(sim.doppler_mode, 'compensated')
+        self.assertAlmostEqual(sim.v_sat, 1.5, places=9)
+
+    def test_full_mode_velocity_much_larger_than_compensated(self):
+        """Orbital speed (7562 m/s) >> UE residual (1.5 m/s): >1000x difference."""
+        sim_full = FadingSimulation(100, 1000, 5.0, 16, 600_000.0, doppler_mode='full')
+        sim_comp = FadingSimulation(100, 1000, 5.0, 16, 600_000.0,
+                                   doppler_mode='compensated', v_residual_mps=1.5)
+        self.assertGreater(sim_full.v_sat / sim_comp.v_sat, 1000)
+
     def test_satellite_velocity_positive(self):
         self.assertGreater(self.sim.v_sat, 0)
 
-    def test_satellite_velocity_approximate(self):
-        """At 600 km altitude, vis-viva gives ~7558 m/s."""
-        # With Doppler_compensate='No': v = sqrt(GM / (R+h))
-        G = 6.6743e-11; M = 5.9722e24; R = 6371e3; h = 600_000.0
-        expected = math.sqrt((G * M) / (R + h))
-        self.assertAlmostEqual(self.sim.v_sat, expected, delta=1.0)
-
-    def test_doppler_compensate_yes_gives_lower_velocity(self):
-        """With compensation='Yes', formula uses (R+h)^2 → lower v_sat."""
-        sim_no  = FadingSimulation(1000, 10000, 5.0, 16, 600_000.0, 'No')
-        sim_yes = FadingSimulation(1000, 10000, 5.0, 16, 600_000.0, 'Yes')
-        self.assertLess(sim_yes.v_sat, sim_no.v_sat)
-
     # -- Doppler frequency ---------------------------------------------------
     def test_f_D_at_zero_elevation_is_max(self):
-        """At θ=0 (head-on), cos(0)=1 → maximum Doppler shift."""
-        fd_0   = self.sim.f_D(theta=0.0,          fc=2.5e9)
-        fd_pi4 = self.sim.f_D(theta=math.pi / 4,  fc=2.5e9)
+        """Full mode: at θ=0 (head-on) Doppler is maximum."""
+        fd_0   = self.sim.f_D(theta=0.0,         fc=2.5e9)
+        fd_pi4 = self.sim.f_D(theta=math.pi / 4, fc=2.5e9)
         self.assertGreater(fd_0, fd_pi4)
 
     def test_f_D_at_90_degrees_is_zero(self):
-        """At θ=π/2 (broadside), cos(π/2)=0 → zero Doppler."""
+        """Full mode: at θ=π/2 (broadside) Doppler is zero."""
         fd = self.sim.f_D(theta=math.pi / 2, fc=2.5e9)
         self.assertAlmostEqual(fd, 0.0, places=3)
 
     def test_f_D_positive_frequency(self):
         for theta in [0.0, 0.3, 0.6, 1.0]:
-            fd = self.sim.f_D(theta=theta, fc=2.5e9)
-            self.assertGreaterEqual(fd, 0.0)
+            self.assertGreaterEqual(self.sim.f_D(theta=theta, fc=2.5e9), 0.0)
+
+    def test_compensated_mode_f_D_independent_of_theta(self):
+        """Option A/B: f_D does not depend on theta (UE direction is random)."""
+        sim = FadingSimulation(100, 1000, 5.0, 16, 600_000.0,
+                               doppler_mode='compensated', v_residual_mps=1.5)
+        fd_0   = sim.f_D(theta=0.0,         fc=2.5e9)
+        fd_pi4 = sim.f_D(theta=math.pi / 4, fc=2.5e9)
+        fd_pi2 = sim.f_D(theta=math.pi / 2, fc=2.5e9)
+        self.assertAlmostEqual(fd_0, fd_pi4, places=9)
+        self.assertAlmostEqual(fd_0, fd_pi2, places=9)
+
+    def test_scaled_mode_f_D_matches_target_tc(self):
+        """Option B: f_D should equal 0.423/Tc_target at fc_ref."""
+        Tc = 0.025  # 25 ms
+        fc = 2.5e9
+        sim = FadingSimulation(100, 1000, 5.0, 16, 600_000.0,
+                               doppler_mode='scaled', Tc_target_s=Tc, fc_ref=fc)
+        expected_fd = 0.423 / Tc
+        self.assertAlmostEqual(sim.f_D(0, fc), expected_fd, delta=0.01)
 
     # -- rician_fading_accurate ----------------------------------------------
     def test_rician_output_length(self):
@@ -544,7 +591,7 @@ class TestFadingSimulationNTN(unittest.TestCase):
         np.random.seed(0)
         self.sim = FadingSimulation_Non_terrestrial(
             num_samples=500, fs=10_000, N=12,
-            h=600_000.0, Doppler_compensate='No'
+            h=600_000.0, doppler_mode='full'
         )
 
     def test_velocity_positive(self):
