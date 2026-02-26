@@ -349,7 +349,20 @@ if __name__ == '__main__':
     num_samples_rician = batch_size // 10  # 1/10th of number_samples_nakagami. Adjustable
     fs_initial = 10000  # Sampling frequency in Hz
     N = 256
-    satellite_fading_channel = Satellite_Fading_channel(number_samples_nakagami, num_samples_rician, fs_initial, N)
+    # Channel generation based on 3GPP TR 38.811 Loo's model. Three options exists in Dchannel generation based on Doppler. Please refer to class Satellite_fading_channel
+    # In this example we use the uncompensated Doppler frequency shift on channel generation
+    # Option A: post-compensation (pedestrian UE, 1.5 m/s default)
+    satellite_fading_channel_compensated = Satellite_Fading_channel(number_samples_nakagami, num_samples_rician, fs_initial, N, doppler_mode='compensated', v_residual_mps=1.5)
+
+	# Option B: target 50 ms coherence time
+    satellite_fading_channel_scaled = Satellite_Fading_channel(
+	    number_samples_nakagami, num_samples_rician, fs_initial, N,
+	    doppler_mode='scaled', Tc_target_s=0.05, fc_ref=2.5e9)
+
+	# Option C: full satellite Doppler (original behaviour, for comparison)
+    satellite_fading_channel = Satellite_Fading_channel(
+	    number_samples_nakagami, num_samples_rician, fs_initial, N,
+	    doppler_mode='full')
 
     #%%
     """ ################################################# Parameters intialization for UAV, drones and HAPs ################################################################ """
