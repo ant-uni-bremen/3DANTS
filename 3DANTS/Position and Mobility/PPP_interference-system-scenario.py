@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb 25 19:46:13 2025
-
-@author: vakilifard
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Modified Network Simulation with Two Base Stations and Transparent Cylinders
+This file was created by the Department of Communications Engineering,
+University of Bremen, Germany.
+https://github.com/ant-uni-bremen
+Copyright (c) 2026 Department of Communications Engineering, University of Bremen
+SPDX-License-Identifier: Apache-2.0
 """
 
 import numpy as np

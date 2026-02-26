@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 12 17:14:28 2025
-
-@author: vakilifard
+This file was created by the Department of Communications Engineering,
+University of Bremen, Germany.
+https://github.com/ant-uni-bremen
+Copyright (c) 2026 Department of Communications Engineering, University of Bremen
+SPDX-License-Identifier: Apache-2.0
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 28 18:42:51 2025
 
-@author: vakilifard
-"""
 import numpy as np
 from numpy import linalg as LA
 import datetime

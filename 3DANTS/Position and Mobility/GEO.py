@@ -1,4 +1,12 @@
-# satellites modelling parameters calculator 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+This file was created by the Department of Communications Engineering,
+University of Bremen, Germany.
+https://github.com/ant-uni-bremen
+Copyright (c) 2026 Department of Communications Engineering, University of Bremen
+SPDX-License-Identifier: Apache-2.0
+"""
 
 import numpy as np
 import datetime
@@ -10,7 +18,7 @@ import pandas as pd
 import math
 
 class LEO_GEO():
-
+# satellites modelling parameters calculator 
     def __init__(self, r_E, gm, h_GEO):
            self.r_E = r_E   # Earth radius
            self.gm = gm    # Geocentric Gravitational Constant [m^3 s^−2]

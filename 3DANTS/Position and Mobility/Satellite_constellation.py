@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jul 30 10:29:05 2024
-
-@author: vakilifard
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 22 11:24:59 2024
-
-@author: vakilifard
+This file was created by the Department of Communications Engineering,
+University of Bremen, Germany.
+https://github.com/ant-uni-bremen
+Copyright (c) 2026 Department of Communications Engineering, University of Bremen
+SPDX-License-Identifier: Apache-2.0
 """
 
 import numpy as np

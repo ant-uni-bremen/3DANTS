@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+This file was created by the Department of Communications Engineering,
+University of Bremen, Germany.
+https://github.com/ant-uni-bremen
+Copyright (c) 2026 Department of Communications Engineering, University of Bremen
+SPDX-License-Identifier: Apache-2.0
+"""
 import numpy as np
 
 class Atmospheric_loss:
